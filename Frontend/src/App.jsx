@@ -9,7 +9,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // 1. Auto-closing brackets logic
+  const API_URL = import.meta.env.VITE_API_URL;
+
   const handleKeyDown = (e) => {
     const pairs = {
       "(": ")",
@@ -25,7 +26,6 @@ export default function App() {
       const { selectionStart, selectionEnd } = e.target;
       const closingChar = pairs[e.key];
 
-      // Insert the pair
       const newCode =
         code.substring(0, selectionStart) +
         e.key +
@@ -34,7 +34,6 @@ export default function App() {
 
       setCode(newCode);
 
-      // Move cursor between the brackets
       setTimeout(() => {
         e.target.selectionStart = e.target.selectionEnd = selectionStart + 1;
       }, 0);
@@ -43,21 +42,26 @@ export default function App() {
 
   const handleReview = async () => {
     if (!code.trim()) return;
+
     setLoading(true);
     setReview("Analyzing your code... ✨");
 
     try {
-      const res = await axios.post("http://localhost:3000/ai/get-Review", { code });
+      const res = await axios.post(`${API_URL}/ai/get-Review`, { code });
       const feedback = res.data.review || res.data;
-      setReview(typeof feedback === "string" ? feedback : JSON.stringify(feedback, null, 2));
+      setReview(
+        typeof feedback === "string"
+          ? feedback
+          : JSON.stringify(feedback, null, 2)
+      );
     } catch (err) {
-      setReview("Error: Backend not found. Ensure your server is running on port 3000.");
+      setReview("Error: Unable to connect to backend.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. Copy to clipboard logic
   const copyToClipboard = () => {
     if (!review) return;
     navigator.clipboard.writeText(review);
@@ -67,7 +71,6 @@ export default function App() {
 
   return (
     <div className="container">
-      {/* LEFT SIDE */}
       <div className="left">
         <h1 className="left-heading">Code Input</h1>
         <div className="editor-container">
@@ -76,12 +79,12 @@ export default function App() {
             placeholder="Paste your code here..."
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            onKeyDown={handleKeyDown} // Trigger auto-close
+            onKeyDown={handleKeyDown}
             spellCheck="false"
           />
-          <button 
-            className="magic-button" 
-            onClick={handleReview} 
+          <button
+            className="magic-button"
+            onClick={handleReview}
             disabled={loading}
           >
             {loading ? "Analyzing..." : "Review Code"}
@@ -89,7 +92,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
       <div className="right">
         <div className="review-header">
           <h1 className="review-heading">AI Review</h1>
@@ -111,4 +113,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+} 
